@@ -105,3 +105,18 @@ If you find our work useful in your research, please consider citing:
   year={2021}
 }
 ```
+
+## Attention Pruning
+
+|$\rho$| GFLOPs | Acc |
+|----|----|----|
+| 0.9 | 3.9 | 79.5 |
+| 0.8 | 3.4 | 78.8 |
+| 0.7 | 2.9 | 78.1 |
+
+## DViT
+|$\rho$| GFLOPs | Acc |
+|----|----|----|
+| 0.9 | 3.9 |  |
+| 0.8 | 3.4 |  |
+| 0.7 | 2.9 |  |
