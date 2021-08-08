@@ -322,7 +322,7 @@ class VisionTransformerAttnPruning(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None, representation_size=None,
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0., hybrid_backbone=None, norm_layer=None, 
-                 pruning_loc=None, token_ratio=None, distill=False):
+                 pruning_loc=None, token_ratio=None, distill=False, random=False):
         """
         Args:
             img_size (int, tuple): input image size
@@ -390,6 +390,7 @@ class VisionTransformerAttnPruning(nn.Module):
         trunc_normal_(self.pos_embed, std=.02)
         trunc_normal_(self.cls_token, std=.02)
         self.apply(self._init_weights)
+        self.random = random
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -429,13 +430,24 @@ class VisionTransformerAttnPruning(nn.Module):
                 num_keep_node = int(init_n * self.token_ratio[p_count])
                 cls_token = x[:, 0]
                 spatial_x = x[:, 1:]
-                attn = torch.einsum('bc,bnc->bn', cls_token, spatial_x)
-                _, topk_ind = torch.topk(attn, num_keep_node, dim=1)
-                spatial_x = batch_index_select(spatial_x, topk_ind)
+                if self.random:
+                    batch = []
+                    topk_ind = []
+                    for b in range(B):
+                        item = spatial_x[b]
+                        idx = torch.randperm(item.size(0), device=item.device)[:num_keep_node]
+                        topk_ind.append(idx)
+                        item = item[idx]
+                        batch.append(item)
+                    spatial_x = torch.stack(batch)
+                    topk_ind = torch.stack(topk_ind)
+                else:
+                    attn = torch.einsum('bc,bnc->bn', cls_token, spatial_x)
+                    _, topk_ind = torch.topk(attn, num_keep_node, dim=1)
+                    spatial_x = batch_index_select(spatial_x, topk_ind)
                 x = torch.cat([cls_token.unsqueeze(1), spatial_x], dim=1)
                 x = blk(x)
                 kept_indices = batch_index_select(kept_indices, topk_ind)
-
                 p_count += 1
             else:
                 x = blk(x)

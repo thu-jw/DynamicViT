@@ -171,6 +171,7 @@ def get_args_parser():
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     parser.add_argument('--distill', action='store_true', default=False, help='Enabling distributed evaluation')
     parser.add_argument('--base_rate', type=float, default=0.7)
+    parser.add_argument('--random', action='store_true', default=False)
 
     return parser
 
@@ -290,7 +291,7 @@ def main(args):
         print('token_ratio =', KEEP_RATE, 'at layer', PRUNING_LOC)
         model = VisionTransformerAttnPruning(
             patch_size=16, embed_dim=384, depth=12, num_heads=6, mlp_ratio=4, qkv_bias=True, 
-            pruning_loc=PRUNING_LOC, token_ratio=KEEP_RATE, distill=args.distill
+            pruning_loc=PRUNING_LOC, token_ratio=KEEP_RATE, distill=args.distill, random=args.random
             )
         model_path = './deit_small_patch16_224-cd65a155.pth'
         checkpoint = torch.load(model_path, map_location="cpu")
